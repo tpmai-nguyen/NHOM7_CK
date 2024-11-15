@@ -6,6 +6,7 @@ st.write("""
 3. Phạm Thị Hoài Thư K224131560
 """)
 st.header("Phân tích mô tả")
+import seaborn as sns
 import pandas as pd
 import requests
 from io import StringIO
@@ -53,15 +54,6 @@ columns_to_drop = ["customer_email", "customer_fname", "customer_lname", "custom
                    "customer_password", "customer_street", "customer_city", "customer_state", 
                    "customer_zip", "customer_country"]
 
-df.drop([col for col in columns_to_drop if col in df.columns], axis=1, inplace=True)
-st.write(df)
-st.write(df.duplicated().sum())
-st.write(df[df.apply(lambda row: row.astype(str).str.contains('\?').any(), axis=1)])
-for i in df.columns:
-    for j in range(len(df[i])):
-        value = str(df[i][j])
-        if '?' in value:
-            df.at[j, i] = value.replace('?', '')
 import matplotlib.pyplot as plt
 st.subheader("Biểu đồ phân phối và hộp cho 'days_for_shipping_real")
 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
@@ -69,9 +61,6 @@ df[["days_for_shipping_real"]].hist(bins=50, ax=axes[0])
 df[["days_for_shipping_real"]].boxplot(ax=axes[1], vert=False)
 st.pyplot(fig)
 
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
 from typing import Tuple
 from sklearn.base import BaseEstimator, TransformerMixin
 
@@ -115,10 +104,8 @@ df[["days_for_shipment_scheduled"]].boxplot(ax=axes[1], vert=False)
 
 st.pyplot(fig)
 
-import pandas as pd
 import matplotlib.pyplot as plt
 from typing import Tuple
-from sklearn.base import BaseEstimator, TransformerMixin
 
 def find_boxplot_boundaries(
     col: pd.Series, whisker_coeff: float = 1.5) -> Tuple[float, float]:
@@ -151,10 +138,6 @@ clipped_order_profit_per_order.hist(bins=50, ax=axes[0])
 clipped_order_profit_per_order.to_frame().boxplot(ax=axes[1], vert=False)
 st.pyplot(fig)
 
-df_1=df.copy()
-import streamlit as st
-import seaborn as sns
-
 st.subheader('Market Distribution')
 fig, ax = plt.subplots()
 df['market'].value_counts().plot.pie(autopct='%1.1f%%', startangle=90, colors=sns.color_palette('pastel'), ax=ax)
@@ -168,8 +151,6 @@ df['customer_segment'].value_counts().plot.pie(autopct='%1.1f%%', startangle=90,
 ax.set_ylabel('')
 ax.set_title('Customer Segment Distribution')
 st.pyplot(fig)
-
-import seaborn as sns
 
 st.subheader('Count of Each Category Name')
 category_counts = df['category_name'].value_counts()
@@ -244,33 +225,10 @@ st.pyplot(fig)
 st.header("Phân tích dự đoán")
 st.subheader('Rủi ro giao hàng trễ')
 
-existing_columns = [col for col in ['type', 'days_for_shipment_scheduled', 'delivery_status', 'late_delivery_risk', 'category_id',
-              'customer_city', 'customer_country', 'customer_segment', 'customer_state', 'latitude', 'longitude',
-              'order_country', 'order_city', 'order_item_product_price', 'order_item_quantity', 'order_status',
-              'product_card_id', 'product_price', 'shipping_date_dateorders', 'shipping_mode', 'late_days',
-              'order_date_dateorders', 'order_region', 'market'] if col in df.columns]
-df_copy = df[existing_columns]
-
-c = df.corr()  
-
-if 'late_delivery_risk' in c.columns:
-    st.write(c['late_delivery_risk'])
-else:
-    st.write("Column 'late_delivery_risk' not found in correlation matrix.")
-
-if 'delivery_status' in df_1.columns:
-    delivery_status_data = df_1['delivery_status']
-    delivery_status_summary = delivery_status_data.value_counts()
-
-    st.write("Delivery Status Summary:")
-    st.write(delivery_status_summary)
-else:
-    st.write("Column 'delivery_status' not found in `df_1`.")
-
 
 plt.figure(figsize=(10, 6))
 sns.set(style="whitegrid")
-sns.countplot(data=df_1, x='delivery_status', order=delivery_status_summary.index, palette='coolwarm')
+sns.countplot(data=df, x='delivery_status', order=delivery_status_summary.index, palette='coolwarm')
 plt.title('Delivery Status Distribution')
 plt.xlabel('Delivery Status')
 plt.ylabel('Count')
@@ -278,8 +236,8 @@ st.pyplot(plt.gcf())
 
 df_copy['late_days'].value_counts().plot.pie(legend = ["0", "1"])
 
-delivery_status_data = df_1['delivery_status']
-shipping_mode_data = df_1['shipping_mode']
+delivery_status_data = df['delivery_status']
+shipping_mode_data = df['shipping_mode']
 
 cross_tab = pd.crosstab(shipping_mode_data, delivery_status_data)
 cross_tab_percent = cross_tab.div(cross_tab.sum(1), axis=0) * 100
@@ -295,7 +253,7 @@ ax.set_xlabel('Shipping Mode')
 ax.set_ylabel('Percentage')
 st.pyplot(fig)
 
-late_delivery_data = df_1[df_1['delivery_status'] == 'Late delivery']
+late_delivery_data = df[df['delivery_status'] == 'Late delivery']
 late_by_product = late_delivery_data['category_name'].value_counts().nlargest(10).reset_index()
 
 plt.figure(figsize=(12, 6))
@@ -311,7 +269,7 @@ plt.xticks(rotation=45, ha='right')
 
 st.pyplot(plt)
 
-group = df_1.groupby(['market', 'delivery_status']).market.count().unstack()
+group = df.groupby(['market', 'delivery_status']).market.count().unstack()
 
 plt.figure(figsize=(10, 6))
 group.plot(kind='bar', ax=plt.gca())
@@ -321,183 +279,7 @@ plt.ylabel('Count')
 
 st.pyplot(plt)
 
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, roc_auc_score
 
-from sklearn.model_selection import cross_val_score
-from sklearn.decomposition import PCA
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.naive_bayes import GaussianNB
-from xgboost import XGBClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import ExtraTreesClassifier, BaggingClassifier
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis, LinearDiscriminantAnalysis
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-target1 = 'late_delivery_risk'
-if target1 not in df_1.columns:
-    raise ValueError(f"The target variable '{target1}' is not present in the dataset.")
-
-from imblearn.over_sampling import SMOTE
-
-X = df_copy.drop(target1, axis=1)
-y = df_copy[target1]
-
-smote = SMOTE(random_state=42)
-X_balanced, y_balanced = smote.fit_resample(X, y)
-
-y = y_balanced
-X = X_balanced
-
-class_counts = pd.Series(y_balanced).value_counts()
-
-st.write("Số lượng lớp 0 sau khi cân bằng:", class_counts[0])
-st.write("Số lượng lớp 1 sau khi cân bằng:", class_counts[1])
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
-
-models = [
-    ("Decision Tree", DecisionTreeClassifier()),
-    ("Random Forest", RandomForestClassifier()),
-    ("Gaussian Naive Bayes", GaussianNB()),
-    ("Logistic Regression", LogisticRegression()),
-    ("KNeighbors", KNeighborsClassifier())
-]
-
-output = {'Model': [], 'Accuracy': [], 'Precision': [], 'Recall': [], 'F1-score': []}
-
-for model_name, model in models:
-    accuracy_scores = cross_val_score(model, X_train, y_train, cv=5, scoring='accuracy')
-    precision_scores = cross_val_score(model, X_train, y_train, cv=5, scoring='precision')
-    recall_scores = cross_val_score(model, X_train, y_train, cv=5, scoring='recall')
-    f1_scores = cross_val_score(model, X_train, y_train, cv=5, scoring='f1')
-    
-    output['Model'].append(model_name)
-    output['Accuracy'].append(np.mean(accuracy_scores))
-    output['Precision'].append(np.mean(precision_scores))
-    output['Recall'].append(np.mean(recall_scores))
-    output['F1-score'].append(np.mean(f1_scores))
-
-output_df = pd.DataFrame(output)
-
-st.title("Model Performance Evaluation")
-st.write("Here are the performance metrics for various machine learning models:")
-
-st.dataframe(output_df)
-
-from sklearn.decomposition import PCA
-from sklearn.model_selection import  KFold, cross_val_score, StratifiedKFold
-import numpy as np
-import pandas as pd
-
-pca = PCA(n_components=0.8)
-
-X_train_pca = pca.fit_transform(X_train)
-X_test_pca = pca.transform(X_test)
-
-models = [
-    ("Decision Tree", DecisionTreeClassifier()),
-    ("Random Forest", RandomForestClassifier()),
-    ("Gaussian Naive Bayes", GaussianNB()),
-    ("Logistic Regression", LogisticRegression()),
-    ("KNeighbors", KNeighborsClassifier())
-]
-
-output = {'Model': [], 'Accuracy': [], 'Precision': [], 'Recall': [], 'F1-score': []}
-for model_name, model in models:
-    model.fit(X_train_pca, y_train)
-    accuracy_scores = cross_val_score(model, X_test_pca, y_test, scoring='accuracy')
-    precision_scores = cross_val_score(model, X_test_pca, y_test, scoring='precision')
-    recall_scores = cross_val_score(model, X_test_pca, y_test, scoring='recall')
-    f1_scores = cross_val_score(model, X_test_pca, y_test, scoring='f1')
-    
-    output['Model'].append(model_name)
-    output['Accuracy'].append(np.mean(accuracy_scores))
-    output['Precision'].append(np.mean(precision_scores))
-    output['Recall'].append(np.mean(recall_scores))
-    output['F1-score'].append(np.mean(f1_scores))
-
-output_df = pd.DataFrame(output)
-
-st.write(output_df)
-
-def frequency_encoding(df, column):
-    frequency_map = df[column].value_counts(normalize=True)
-    df[column + '_freq_encoded'] = df[column].map(frequency_map)
-    return df
-
-instances_to_predict = pd.DataFrame({
-    'Type': ['DEBIT','DEBIT'],
-    'Days for shipment (scheduled)': [5,6],
-    'Delivery Status': ['Advance shipping','Advance shipping'],
-    'Category Id': [17,17],
-    'Category Name': ['Cleats','Cleats'],
-    'Customer City': ['Los Angeles','Los Angeles'],
-    'Customer Country': ['EE. UU.', 'EE. UU.'],
-    'Customer Segment': ['Corporate','Corporate'],
-    'Customer State': ['NY','NY'],
-    'Latitude': [17.24253835,17.24253835],
-    'Longitude': [-65.03704823,-65.03704823],
-    'Order City': ['Bikaner','Bikaner'],
-    'Order Country': ['India','India'],
-    'Order Item Product Price': [327.75,327.75],
-    'Order Item Quantity': [2,2],
-    'Order Status': ['COMPLETE','COMPLETE'],
-    'Product Card Id': [1360,1360],
-    'Product Price': [327.75,327.75],
-    'Order Region': ['Southeast Asia','Southeast Asia'],
-    'Market': ['Asia','Asia']
-})
-
-columns_to_encode = ['Type', 'Delivery Status','Category Name','Customer City','Customer Country','Customer Segment',
-                    'Customer State','Order City','Order Country','Order Status','Order Region','Market']
-
-for column in columns_to_encode:
-    instances_to_predict = frequency_encoding(instances_to_predict, column)
-
-instances_to_predict.drop(columns=columns_to_encode, inplace=True)
-
-scaler = StandardScaler()
-instances_to_predict_scaled = scaler.fit_transform(instances_to_predict)
-
-X_train = np.random.rand(10, instances_to_predict_scaled.shape[1])
-y_train = np.random.randint(0, 2, 10)  # Random binary labels
-
-gb_model = XGBClassifier()
-gb_model.fit(X_train, y_train)
-
-predictions = gb_model.predict(instances_to_predict_scaled)
-
-st.title("Late Delivery Prediction")
-
-st.write("### Input Data (Instances to Predict):")
-st.write(instances_to_predict)
-st.write("### Predictions:")
-st.write("Case 1: Predicted Late Delivery:", "Yes" if predictions[0] == 1 else "No")
-st.write("Case 2: Predicted Late Delivery:", "Yes" if predictions[1] == 1 else "No")
-
-st.subheader("Dự đoán doanh số mỗi khách hàng tạo ra")
-
-df_copy2=df[["sales","delivery_status","category_id","customer_city","customer_country","customer_segment","customer_state","order_country","order_city",
-            "order_item_product_price","order_item_quantity","order_status","product_card_id","product_price","order_region","market"]]
-
-c = df.corr()
-
-st.write("Correlation with 'sales':")
-st.write(c['sales'])
 
 df['order_date_dateorders'] = pd.to_datetime(df['order_date_dateorders'])
 
@@ -524,7 +306,7 @@ plt.tight_layout()
 st.pyplot(plt)
 
 plt.figure(figsize=(12, 6))
-sns.barplot(x='category_name', y='sales', data=df_1)
+sns.barplot(x='category_name', y='sales', data=df)
 plt.title('Doanh thu theo loại hàng')
 plt.xlabel('Loại hàng')
 plt.ylabel('Doanh thu')
@@ -533,93 +315,4 @@ plt.tight_layout()
 
 st.pyplot(plt)
 
-target2 = 'sales'
-if target2 not in df_1.columns:
-    raise ValueError(f"The target variable '{target2}' is not present in the dataset.")
 
-
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.svm import SVR
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.pipeline import make_pipeline
-
-X = df_copy2.drop(target2, axis=1)
-y = df_copy2[target2]
-
-X2_train, X2_test, y2_train, y2_test = train_test_split(X2, y2, test_size=0.3, random_state=42)
-
-scaler = StandardScaler()
-X2_train = scaler.fit_transform(X2_train)
-X2_test = scaler.transform(X2_test)
-
-models = {
-    'Multiple Linear Regression': LinearRegression(),
-    'Polynomial Regression': make_pipeline(PolynomialFeatures(degree=2), LinearRegression()),
-    'Support Vector Regression': SVR(),
-    'Decision Tree Regression': DecisionTreeRegressor(),
-    'Random Forest Regression': RandomForestRegressor()
-}
-
-results = {}
-for name, model in models.items():
-    model.fit(X2_train, y2_train)
-    y2_pred = model.predict(X2_test)
-
-    mse = mean_squared_error(y2_test, y2_pred)
-    r_square = r2_score(y2_test, y2_pred)
-    results[name] = {'MSE': mse, 'R^2': r_square}
-
-st.title("Model Performance Evaluation")
-
-for model_name, metrics in results.items():
-    st.subheader(f"{model_name} performance:")
-    for metric, value in metrics.items():
-        st.write(f"{metric}: {value:.4f}")
-
-def frequency_encoding(df, column):
-    frequency_map = df[column].value_counts(normalize=True)
-    df[column + '_freq_encoded'] = df[column].map(frequency_map)
-    return df
-
-instances_to_predict = pd.DataFrame({
-    'Delivery Status': ['Advance shipping','Advance shipping'],
-    'Category Id': [17,17],
-    'Customer City': ['Los Angeles','Los Angeles'],
-    'Customer Country': ['EE. UU.', 'EE. UU.'],
-    'Customer Segment': ['Corporate','Corporate'],
-    'Customer State': ['NY','NY'],
-    'Order City': ['Bikaner','Bikaner'],
-    'Order Country': ['India','India'],
-    'Order Item Product Price': [327.75,327.75],
-    'Order Item Quantity': [2,2],
-    'Order Status': ['COMPLETE','COMPLETE'],
-    'Product Card Id': [1360,1360],
-    'Product Price': [327.75,327.75],
-    'Order Region': ['Southeast Asia','Southeast Asia'],
-    'Market': ['Asia','Asia']
-})
-
-columns_to_encode = ['Delivery Status','Category Name','Customer City','Customer Country','Customer Segment',
-                    'Customer State','Order City','Order Country','Order Status','Order Region','Market']
-
-for column in columns_to_encode:
-    instances_to_predict = frequency_encoding(instances_to_predict, column)
-
-instances_to_predict.drop(columns=columns_to_encode, inplace=True)
-
-scaler = StandardScaler()
-instances_to_predict_scaled = scaler.fit_transform(instances_to_predict)
-
-X_train = np.random.rand(10, instances_to_predict_scaled.shape[1])
-y_train = np.random.randint(0, 2, 10)  # Random binary labels
-
-gb_model = XGBClassifier()
-gb_model.fit(X_train, y_train)
-
-predictions = gb_model.predict(instances_to_predict_scaled)
-
-st.write("Case 1: Predicted Sales:", predictions[0])
-st.write("Case 2: Predicted Sales:", predictions[1])
