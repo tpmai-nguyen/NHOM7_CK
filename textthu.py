@@ -222,9 +222,6 @@ sns.heatmap(df.corr(numeric_only=True), annot=True, cmap='coolwarm', vmin=-1, vm
 ax.set_title('Correlation Heatmap')
 
 st.pyplot(fig)
-st.header("Phân tích dự đoán")
-st.subheader('Rủi ro giao hàng trễ')
-
 
 plt.figure(figsize=(10, 6))
 sns.set(style="whitegrid")
