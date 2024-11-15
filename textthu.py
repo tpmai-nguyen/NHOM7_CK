@@ -234,7 +234,7 @@ plt.xlabel('Delivery Status')
 plt.ylabel('Count')
 st.pyplot(plt.gcf())
 
-df_copy['late_days'].value_counts().plot.pie(legend = ["0", "1"])
+df['late_days'].value_counts().plot.pie(legend = ["0", "1"])
 
 delivery_status_data = df['delivery_status']
 shipping_mode_data = df['shipping_mode']
