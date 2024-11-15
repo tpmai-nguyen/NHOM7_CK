@@ -223,6 +223,9 @@ ax.set_title('Correlation Heatmap')
 
 st.pyplot(fig)
 
+delivery_status_data = df_1['delivery_status']
+delivery_status_summary = delivery_status_data.value_counts()
+
 plt.figure(figsize=(10, 6))
 sns.set(style="whitegrid")
 sns.countplot(data=df, x='delivery_status', order=delivery_status_summary.index, palette='coolwarm')
